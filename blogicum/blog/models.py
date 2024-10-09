@@ -2,8 +2,12 @@ from django.db import models
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 
+MAX_TITLE_LENGHT: int = 256
+
 
 class GeneralData(models.Model):
+    """Класс для наследования общих для других классов данных"""
+
     is_published = models.BooleanField(
         'Опубликовано',
         default=True,
@@ -19,7 +23,9 @@ class GeneralData(models.Model):
 
 
 class Category(GeneralData):
-    title = models.CharField('Заголовок', max_length=256)
+    """Класс для категорий постов"""
+
+    title = models.CharField('Заголовок', max_length=MAX_TITLE_LENGHT)
     description = models.TextField('Описание')
     slug = models.SlugField(
         'Идентификатор',
@@ -39,7 +45,9 @@ class Category(GeneralData):
 
 
 class Location(GeneralData):
-    name = models.CharField('Название места', max_length=256)
+    """Класс для локаций постов"""
+
+    name = models.CharField('Название места', max_length=MAX_TITLE_LENGHT)
 
     class Meta:
         verbose_name = 'местоположение'
@@ -53,7 +61,9 @@ User = get_user_model()
 
 
 class Post(GeneralData):
-    title = models.CharField('Заголовок', max_length=256)
+    """Класс для постов"""
+
+    title = models.CharField('Заголовок', max_length=MAX_TITLE_LENGHT)
     text = models.TextField('Текст')
     pub_date = models.DateTimeField(
         'Дата и время публикации',
@@ -97,6 +107,8 @@ class Post(GeneralData):
 
 
 class Comment(GeneralData):
+    """Класс для комментариев постов"""
+
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -113,6 +125,5 @@ class Comment(GeneralData):
     class Meta:
         ordering = ('created_at',)
         default_related_name = 'comments'
-        # ordering = ['-pub_date']
         verbose_name = 'комментарий'
         verbose_name_plural = 'Комментарии'

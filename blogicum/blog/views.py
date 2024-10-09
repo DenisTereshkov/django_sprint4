@@ -1,17 +1,19 @@
+from django.http import Http404
+from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.shortcuts import get_object_or_404, render, redirect
 from django.db.models import Count
 from django.db.models.functions import Now
-from blog.models import Post, Category, User, Comment
-from django.views.generic import ListView, DetailView, UpdateView, DeleteView
-from django.urls import reverse, reverse_lazy
-from django.utils import timezone
-from django.http import Http404
-from . forms import CreatePostForm, CommentForm
 from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.paginator import Paginator
+from django.views.generic import ListView, DetailView, UpdateView, DeleteView
 
-POSTS_ON_PAGE = 10
+from . forms import CreatePostForm, CommentForm
+from blog.models import Post, Category, User, Comment
+
+
+POSTS_ON_PAGE: int = 10
 
 QUERY_SET_TEMPLATE = Post.objects.all(
 ).filter(
@@ -24,6 +26,7 @@ QUERY_SET_TEMPLATE = Post.objects.all(
 
 
 def paginator(request, posts):
+    """Постраничный вывод"""
     paginator = Paginator(posts, POSTS_ON_PAGE)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -31,6 +34,7 @@ def paginator(request, posts):
 
 
 class OnlyAuthorMixin(UserPassesTestMixin):
+    """Использование миксина дает доступ только для автора"""
 
     def test_func(self):
         object = self.get_object()
@@ -41,6 +45,8 @@ class OnlyAuthorMixin(UserPassesTestMixin):
 
 
 class PostUpdateView(OnlyAuthorMixin, UpdateView):
+    """Изменение поста пользователя"""
+
     model = Post
     pk_url_kwarg = 'post_id'
     form_class = CreatePostForm
@@ -51,6 +57,8 @@ class PostUpdateView(OnlyAuthorMixin, UpdateView):
 
 
 class PostDeleteView(OnlyAuthorMixin, DeleteView):
+    """Удаление поста пользователя"""
+
     model = Post
     pk_url_kwarg = 'post_id'
     template_name = 'blog/create.html'
@@ -58,7 +66,8 @@ class PostDeleteView(OnlyAuthorMixin, DeleteView):
 
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
-    # slug_url_kwarg = 'username'
+    """Изменение данных профиля пользователя"""
+
     template_name = 'blog/user.html'
     model = User
     fields = ('username', 'first_name', 'last_name', 'email')
@@ -71,6 +80,7 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
 
 
 def profile(request, username):
+    """Функция описывающая профиль пользователя"""
     template_name = 'blog/profile.html'
     user = get_object_or_404(User, username=username)
     if request.user.username == username:
@@ -89,6 +99,8 @@ def profile(request, username):
 
 
 class IndexListView(ListView):
+    """Отвечает за посты на главной странице"""
+
     template_name = 'blog/index.html'
     model = Post
     ordering = 'pub_date'
@@ -99,6 +111,8 @@ class IndexListView(ListView):
 
 
 class PostDetailView(DetailView):
+    """Просмотр деталей поста"""
+
     model = Post
     template_name = 'blog/detail.html'
 
@@ -119,6 +133,7 @@ class PostDetailView(DetailView):
 
 
 def category_posts(request, category_slug):
+    """Функция категорий постов"""
     template_name = 'blog/category.html'
     category = get_object_or_404(
         Category.objects.all().filter(
@@ -139,6 +154,7 @@ def category_posts(request, category_slug):
 
 @login_required
 def post_create(request):
+    """Создание постов"""
     template_name = 'blog/create.html'
     form = CreatePostForm(request.POST or None, files=request.FILES or None)
     if form.is_valid():
@@ -151,6 +167,7 @@ def post_create(request):
 
 @login_required
 def add_comment(request, post_id):
+    """Добавление комментариев к посту"""
     form = CommentForm(request.POST)
     if form.is_valid():
         comment = form.save(commit=False)
@@ -161,6 +178,8 @@ def add_comment(request, post_id):
 
 
 class CommentEditView(OnlyAuthorMixin, UpdateView):
+    """Редактирование комментрия"""
+
     model = Comment
     pk_url_kwarg = 'comment_id'
     form_class = CommentForm
@@ -171,6 +190,8 @@ class CommentEditView(OnlyAuthorMixin, UpdateView):
 
 
 class CommentDeleteView(OnlyAuthorMixin, DeleteView):
+    """Удаление комментария"""
+
     model = Comment
     pk_url_kwarg = 'comment_id'
     form_class = CommentForm
